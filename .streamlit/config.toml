@@ -1,0 +1,22 @@
+[browser]
+# Whether to send usage statistics to Streamlit.
+# Default: true
+gatherUsageStats = false
+# Internet address where users should point their browsers in order to connect to the app. Can be IP address or DNS name and path.
+# This is used to: - Set the correct URL for CORS and XSRF protection purposes. - Show the URL on the terminal - Open the browser
+# Default: 'localhost'
+# serverAddress = "localhost"
+# Port where users should point their browsers in order to connect to the app.
+# This is used to: - Set the correct URL for CORS and XSRF protection purposes. - Show the URL on the terminal - Open the browser
+# Default: whatever value is set in server.port.
+# serverPort = 8501
+
+[ui]
+# Flag to hide most of the UI elements found at the top of a Streamlit app.
+# NOTE: This does *not* hide the hamburger menu in the top-right of an app.
+# Default: false
+hideTopBar = true
+
+[theme]
+base="light"
+font="serif"
