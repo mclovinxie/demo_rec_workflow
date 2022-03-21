@@ -12,7 +12,7 @@ import numpy as np
 import streamlit as st
 
 from const import (
-    APP_NAME, SIDE_BAR_TITLE, MODELS, WINDOW_SIZES, SUCCESSOR_ENABLED, SERVICE_TOKEN_SEPARATOR, CHANGE_TEXT
+    APP_NAME, SIDE_BAR_TITLE, MODELS, WINDOW_SIZES, YES_OR_NO, SERVICE_TOKEN_SEPARATOR, CHANGE_TEXT
 )
 from models import models, precursor, successor
 
@@ -22,23 +22,49 @@ from models import models, precursor, successor
 #     return models[f'{m.lower()}_{int(w)}']
 
 
-st.set_page_config(layout='wide')
+st.set_page_config(
+    layout='wide', page_title=APP_NAME
+)
 st.title(APP_NAME)
 st.sidebar.text(SIDE_BAR_TITLE)
 
 top_k = st.sidebar.slider('How many services do you need?', 1, 20, 5)
 # layout = st.sidebar.radio('Specify the layout', LAYOUTS)
 layout = 'text'
-successor_enabled = st.sidebar.radio('Enable successor probability', SUCCESSOR_ENABLED)
+successor_enabled = st.sidebar.radio('Enable successor probability', YES_OR_NO)
 model_name = st.sidebar.selectbox(label='Select a generation strategy to apply', options=MODELS, index=0)
 window_size = st.sidebar.selectbox(
     label='Specify the context size',
     options=[e // 2 for e in WINDOW_SIZES],
     index=0, key='window_size'
 )
+arch_svg = st.sidebar.radio('Display the high-level architecture', YES_OR_NO)
 
 # the_model = load_model(model_name, window_size * 2 + 1)
 the_model = models[f'{model_name.lower()}_{int(window_size) * 2 + 1}']
+
+
+def render_svg():
+    """Renders the given svg string."""
+    import base64
+    svg = """
+            <svg xmlns="./resources/imgs/architecture.png" width="100" height="100">
+                <circle cx="50" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow" />
+            </svg>
+        """
+    b64 = base64.b64encode(svg.encode('utf-8')).decode("utf-8")
+    html = r'<img src="data:image/svg+xml;base64,%s"/>' % b64
+    st.write(html, unsafe_allow_html=True)
+
+
+def render_png():
+    from PIL import Image
+    image = Image.open('./resources/imgs/architecture.png')
+    st.image(image, caption='Blueprint of our solution')
+
+
+if arch_svg == 'Yes':
+    render_png()
 
 input_column, result_column = st.columns(2)
 
@@ -53,6 +79,7 @@ def coefficient(tl, t):
             for tle in tl.split(SERVICE_TOKEN_SEPARATOR):
                 n_pre += precursor.get(tle, {}).get(e, 0)
                 n_suc += successor.get(tle, {}).get(e, 0)
+    # n_pre, n_suc = n_pre / 10, n_suc / 10
     return np.exp(n_suc) / (np.exp(n_pre) + np.exp(n_suc))
 
 
@@ -68,8 +95,8 @@ def rec(context):
                 new_context.append(ee)
         context = new_context
     try:
-        similarities = {e[0]: e[1] for e in the_model.wv.most_similar(positive=context, topn=top_k * 50)}
-        if successor_enabled:
+        similarities = {e[0]: e[1] for e in the_model.wv.most_similar(positive=context, topn=top_k * 30)}
+        if successor_enabled == 'Yes':
             for k in similarities:
                 similarities[k] *= coefficient(context[-1], k)
             similarities = sorted(similarities.items(), key=lambda e: e[1], reverse=True)
